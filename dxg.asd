@@ -4,5 +4,6 @@
 ;;;
 (defsystem dxg
     :serial t
-    :components ((:file "packages") 
+    :components ((:file "packages")
+		 (:file "util")
 		 (:file "xml-generator")))

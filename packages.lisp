@@ -8,4 +8,5 @@
    empty-tag
    end-tag
    start-tag
+   xml-spec
    xmlc))
