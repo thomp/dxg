@@ -139,12 +139,11 @@ VALUEn can be ?? string? any object? If VALUEn is NIL, ignore that attribute spe
 ;; TREPL> (dxg:xmlc "foo" "goo" :attr '(("a" "b")))
 ;; "<foo a=\"b\">goo</foo>"
 (defun xmlc (name some-string &key attr namespace stream)
-  "Return as a string a <name>...</name> component of a XML document where SOME-STRING is included verbatim as the value of the node. If SOME-STRING is NIL, return <tag ... />. ATTR is an alist of strings where, for each member, the car is the string corresponding to the attribute name and the cadr is the attribute value. If STREAM is non-NIL, write string to stream STREAM. NAMESPACE is a string corresponding to the namespace."
+  "Return as a string a <name>...</name> component of a XML document where SOME-STRING (a string or NIL) is included verbatim as the value of the node. If SOME-STRING is NIL, return <tag ... />. ATTR is an alist of strings where, for each member, the car is the string corresponding to the attribute name and the cadr is the attribute value. If STREAM is non-NIL, write string to stream STREAM. NAMESPACE is a string corresponding to the namespace."
   (declare (string name))
   ;(assert (stringp tag))
   (assert (listp attr))
-  (assert (dat-cl-utils:noas some-string) nil 
-	  (format nil "SOME-STRING should be a string or nil; instead it was ~A." some-string))
+  ;(assert (dat-cl-utils:noas some-string) nil (format nil "SOME-STRING should be a string or nil; instead it was ~A." some-string))
   (let ((return-string
 	 (if some-string
 	     (concs
