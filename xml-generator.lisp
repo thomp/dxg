@@ -146,7 +146,7 @@ VALUEn can be ?? string? any object? If VALUEn is NIL, ignore that attribute spe
   ;(assert (dat-cl-utils:noas some-string) nil (format nil "SOME-STRING should be a string or nil; instead it was ~A." some-string))
   (let ((return-string
 	 (if some-string
-	     (concs
+	     (concatenate 'string
 	      (start-tag name :attributes attr :namespace namespace)
 	      some-string 
 	      (end-tag name :namespace namespace))
