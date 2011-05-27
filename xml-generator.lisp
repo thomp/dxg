@@ -131,6 +131,28 @@ VALUEn can be ?? string? any object? If VALUEn is NIL, ignore that attribute spe
 	     (concatenate 'string "<" namespace ":" label attributesstring ">"))))
     (if stream (write-string return-string stream) return-string)))
 
+
+
+(defun xml-spec (&key stylesheets stream)
+  "Return a string corresponding to the top of a XML document. This includes the prologue (<?xml ...> statement and, possibly, a stylesheet specification <?xml-stylesheet ...>) and the DOCTYPE document type declaration. If STYLESHEETS is non-nil, then <?xml-stylesheet ...> declarations are specified with STYLESHEETS (see XML-STYLESHEET for format of STYLESHEETS). Note that it may not be desirable to specify stylesheets here; in a HTML document, the stylesheet can also be specified using the 'STYLE' tag in the HEAD component of the document."
+  (assert (if stylesheets (listp (first stylesheets)) t))
+  (write-string
+   (with-output-to-string (s)
+     (format s "<?xml version=\"1.0\"?>") 
+     (if stylesheets
+	 (write-string (xml-stylesheet stylesheets) s))
+     (format s "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">"))
+   stream))
+
+(defun xml-stylesheet (stylesheets)
+  "STYLESHEETS is a list where each member is a list of the form (href type). Return string representing one or more <?xml-stylesheet ...?> clauses."
+  (with-output-to-string (s)
+    (dolist (stylesheet-spec stylesheets)
+      (let ((href (first stylesheet-spec))
+	    (type (second stylesheet-spec)))
+	(format s "<?xml-stylesheet href=\"~A\" type=\"~A\"?>"
+		href type)))))
+
 ;; FIXME: merge functionality with xml-utils.lisp/EXML (which doesn't support namespaces)
 ;; test:
 ;; OTL> (dat-xml::xmlc "foo" "glurp" :attributes '(("a" . "b") ("c" . "d")) :namespace "XX")
