@@ -1,0 +1,4 @@
+DXG is a XML generator/emitter. DXG does not
+- nicely indent
+- handle special characters
+...
