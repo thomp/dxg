@@ -37,14 +37,22 @@ If VALUEn is NIL, ignore that attribute specification."
 (defun empty-tag (label &key namespace attributes (attributes-string "") stream)
   "Return a string. ATTRIBUTES is a list of lists of the form ((attribute1 value1) (attribute2 value2) ...). ATTRIBUTES-STRING is a string placed at position where attributes are specified."
   (assert (listp attributes))
-  (let ((attributesstring
-	 (if attributes 
-	     (concatenate 'string (attributes-to-xml attributes) attributes-string)
-	     attributes-string)))
-    ;; ATTRIBUTESSTRING isn't necessarily preceded by a space
-    (if (noes namespace)
-	(format stream "<~A ~A />" label attributesstring)
-	(format stream "<~A:~A ~A />" namespace label attributesstring))))
+  (write-string
+   (with-output-to-string (s)
+     (write-char #\< s)
+     (when (not (noes namespace))
+       (write-string namespace s)
+       (write-char #\: s))
+     (write-string label s)
+     (when attributes
+       ;;(write-char #\Space s) ;; ATTRIBUTES-TO-XML introduces a space preceding attributes
+       (write-string (attributes-to-xml attributes) s))
+     (when attributes-string
+       (write-char #\Space s)
+       (write-string attributes-string s))
+     (write-char #\/ s)
+     (write-char #\> s))
+   stream))
 
 (defun end-tag (label &key namespace stream) ; formerly &optional namespace
   " "
