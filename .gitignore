@@ -1,0 +1,9 @@
+/.gitignore~
+/README~
+/dxg.asd~
+/named-entities.lisp~
+/packages.lisp~
+/testing.lisp
+/testing.lisp~
+/util.lisp~
+/xml-generator.lisp~

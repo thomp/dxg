@@ -2,65 +2,88 @@
 ;;;
 ;;; xml-generator.lisp: generate XML strings
 ;;;
-(defun attributes-to-xml (attributes)
-  "Given a list of lists where each sublist has the form (attribute1 value1), return a string representing the attributes in the form used in an XML document. 
 
-VALUEn can be ... any object?
-
-If VALUEn is NIL, ignore that attribute specification."
-  (with-output-to-string (s)
-    (do ((apair (pop attributes) (pop attributes)))
-	((and (null attributes) (not apair)))
-      (let ((a (first apair))
-	    (v (second apair)))
-	(if v
-	    (format s " ~A=\"~A\"" a v ))))))
+;; 06b
+(defun attributes-to-xml (attributes stream)
+  "Given a list of lists where each sublist has the form (attribute1 value1), write equivalent of string representing the attributes in the form used in an XML document to stream STREAM."
+  (block outer
+    (tagbody 
+     top
+       (let ((apair (pop attributes))) 
+	 (if apair
+	     (let ((v (second apair)))
+	       (if v 	    
+		   (format stream " ~A=\"~A\"" (first apair) v )))))
+       (if (null attributes) 
+	   (return-from outer) 
+	   (go top)))))
 
 (defun empty-tag (label &key namespace attributes (attributes-string "") stream)
   "Return a string. ATTRIBUTES is a list of lists of the form ((attribute1 value1) (attribute2 value2) ...). ATTRIBUTES-STRING is a string placed at position where attributes are specified."
   (assert (listp attributes))
   (write-string
    (with-output-to-string (s)
-     (write-char #\< s)
-     (when (not (noes namespace))
-       (write-string namespace s)
-       (write-char #\: s))
-     (write-string label s)
-     (when attributes
-       ;;(write-char #\Space s) ;; ATTRIBUTES-TO-XML introduces a space preceding attributes
-       (write-string (attributes-to-xml attributes) s))
-     (when attributes-string
-       (write-char #\Space s)
-       (write-string attributes-string s))
-     (write-char #\/ s)
-     (write-char #\> s))
+     (empty-tag* label :namespace namespace
+		 :attributes attributes
+		 :attributes-string attributes-string
+		 :stream s))
    stream))
+
+(defun empty-tag* (label &key namespace attributes (attributes-string "") stream)
+  (write-char #\< stream)
+  (when (not (noes namespace))
+    (write-string namespace stream)
+    (write-char #\: stream))
+  (write-string label stream) 
+  ;; ATTRIBUTES-TO-XML introduces a space preceding attributes
+  (attributes-to-xml attributes stream)
+  (when attributes-string
+    (write-char #\Space stream)
+    (write-string attributes-string stream))
+  (write-char #\/ stream)
+  (write-char #\> stream))
 
 (defun end-tag (label &key namespace stream)
   (let ((string
-	 (if (noes namespace)
-	     (concatenate 'string "</" label ">") 
-	     (concatenate 'string "</" namespace ":" label ">"))))
+	 (with-output-to-string (s)
+	   (end-tag* label :namespace namespace :stream s))))
     (if stream (write-string string stream) string)))
 
+(defun end-tag* (label &key namespace stream)
+  (write-string "</" stream)
+  (unless (noes namespace)
+    (write-string namespace stream)
+    (write-char #\: stream))
+  (write-string label stream)
+  (write-char #\> stream))
+
 (defun start-tag (label &key namespace attributes verbatim-attributes stream) ; formerly &optional namespace
-  "ATTRIBUTES is a list of lists of the form ((attribute1 value1) (attribute2 value2) ...) 
+  "ATTRIBUTES is a list of lists of the form ((attribute1 value1) (attribute2 value2) ...). If non-NIL, VERBATIM-ATTRIBUTES is a string which should be included verbatim at the attributes position of the tag."
+  (declare (list attributes))
+  (let ((return-string
+	 (with-output-to-string (s)
+	   (start-tag* label :namespace namespace
+		       :attributes attributes
+		       :verbatim-attributes verbatim-attributes
+		       :stream s))))
+    (if stream
+	(write-string return-string stream) 
+	return-string)))
 
-If non-NIL, VERBATIM-ATTRIBUTES is a string which should be included verbatim at the attributes position of the tag.
-
-VALUEn can be ?? string? any object? If VALUEn is NIL, ignore that attribute specification."
-  (assert (listp attributes))
-  (let* ((attributesstring
-	 (concatenate 'string
-	  (if attributes
-	      (attributes-to-xml attributes)
-	      "")
-	  (if verbatim-attributes (concatenate 'string " " verbatim-attributes) "")))
-	(return-string
-	 (if (noes namespace)
-	     (concatenate 'string "<" label attributesstring ">")
-	     (concatenate 'string "<" namespace ":" label attributesstring ">"))))
-    (if stream (write-string return-string stream) return-string)))
+(defun start-tag* (label &key namespace attributes verbatim-attributes stream) 
+  (write-char #\< stream)
+  (unless (noes namespace)
+    (progn
+      (write-string namespace stream)
+      (write-char #\: stream)))
+  (write-string label stream)
+  (if attributes
+      (attributes-to-xml attributes stream))
+  (if verbatim-attributes 
+      (progn
+	(write-char #\Space stream)
+	(write-string verbatim-attributes stream))) 
+  (write-char #\> stream))
 
 (defun prologue (&optional s)
   (write-string "<?xml version=\"1.0\"?>" s))
@@ -86,15 +109,19 @@ VALUEn can be ?? string? any object? If VALUEn is NIL, ignore that attribute spe
 		href type)))))
 
 (defun xmlc (name some-string &key attr namespace stream)
-  "Return as a string a <name>...</name> component of a XML document where SOME-STRING (a string or NIL) is included verbatim as the value of the node. If SOME-STRING is NIL, return <tag ... />. ATTR is an alist of strings where, for each member, the car is the string corresponding to the attribute name and the cadr is the attribute value. If STREAM is non-NIL, write string to stream STREAM. NAMESPACE is a string corresponding to the namespace."
+  "Return, as a string, a <name>...</name> component of a XML document. SOME-STRING, if a string, is included verbatim as the value of the node. If SOME-STRING is NIL, <name ... /> is returned. ATTR is an alist of strings where, for each member, the car is the string corresponding to the attribute name and the cadr is the attribute value. If STREAM is non-NIL, write string to stream STREAM. NAMESPACE is a string corresponding to the namespace."
   (declare (string name)
 	   (list attr))
-  ;;(assert (noas some-string) nil (format nil "SOME-STRING should be a string or nil; instead it was ~A." some-string))
   (let ((return-string
-	 (if some-string
-	     (concatenate 'string
-	      (start-tag name :attributes attr :namespace namespace)
-	      some-string 
-	      (end-tag name :namespace namespace))
-	     (empty-tag name :namespace namespace :attributes attr))))
+	 (with-output-to-string (s) (xmlc* name some-string :attr attr :namespace namespace :stream s))))
     (if stream (write-string return-string stream) return-string)))
+
+(defun xmlc* (name some-string &key attr namespace stream)
+  (declare (string name)
+	   (list attr))
+  (if some-string
+      (progn
+	(start-tag* name :attributes attr :namespace namespace :stream stream)
+	(write-string some-string stream)
+	(end-tag* name :namespace namespace :stream stream))
+      (empty-tag* name :namespace namespace :attributes attr :stream stream)))
