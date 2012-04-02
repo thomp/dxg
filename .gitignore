@@ -1,4 +1,6 @@
 /.gitignore~
+/DESIGN-PHILOSOPHY
+/DESIGN-PHILOSOPHY~
 /README~
 /dxg.asd~
 /named-entities.lisp~

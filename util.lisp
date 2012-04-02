@@ -1,7 +1,6 @@
-;;; -*- Mode: LISP; Syntax: COMMON-LISP; Package: DXG; Base: 10 -*-
 (in-package :dxg)
 ;;;
-;;; util.lisp: misc utility fns
+;;; util.lisp: utility fns
 ;;;
 
 ;;;
@@ -11,7 +10,7 @@
   (member char '(#\Newline #\Space #\Tab #\Return #\Linefeed #\Page)))
 
 ;;;
-;;; DAT-CL-UTILS/shared-string.lisp
+;;; DCU/shared-string.lisp
 ;;;
 (defun empty-string-p (str)
   (do ((n 0 (1+ n)))
