@@ -23,13 +23,17 @@
   (assert (listp attributes))
   (write-string
    (with-output-to-string (s)
-     (empty-tag* label :namespace namespace
+     (empty-tag* label s 
+		 :namespace namespace
 		 :attributes attributes
-		 :attributes-string attributes-string
-		 :stream s))
+		 :attributes-string attributes-string))
    stream))
 
-(defun empty-tag* (label &key namespace attributes (attributes-string "") stream)
+(defun empty-tag* (label stream &key namespace attributes (attributes-string ""))
+  "Return value undefined. Act on stream STREAM."
+  (declare (optimize (speed 3)) 
+	   (string label) 
+	   (stream stream))
   (write-char #\< stream)
   (when (not (noes namespace))
     (write-string namespace stream)
@@ -46,10 +50,14 @@
 (defun end-tag (label &key namespace stream)
   (let ((string
 	 (with-output-to-string (s)
-	   (end-tag* label :namespace namespace :stream s))))
+	   (end-tag* label s :namespace namespace))))
     (if stream (write-string string stream) string)))
 
-(defun end-tag* (label &key namespace stream)
+(defun end-tag* (label stream &key namespace)
+  "Return value undefined. Act on stream STREAM."
+  (declare (optimize (speed 3)) 
+	   (string label) 
+	   (stream stream))
   (write-string "</" stream)
   (unless (noes namespace)
     (write-string namespace stream)
@@ -62,15 +70,19 @@
   (declare (list attributes))
   (let ((return-string
 	 (with-output-to-string (s)
-	   (start-tag* label :namespace namespace
+	   (start-tag* label s
+		       :namespace namespace
 		       :attributes attributes
-		       :verbatim-attributes verbatim-attributes
-		       :stream s))))
+		       :verbatim-attributes verbatim-attributes))))
     (if stream
 	(write-string return-string stream) 
 	return-string)))
 
-(defun start-tag* (label &key namespace attributes verbatim-attributes stream) 
+(defun start-tag* (label stream &key namespace attributes verbatim-attributes) 
+  "Return value undefined. Act on stream STREAM."
+  (declare (optimize (speed 3)) 
+	   (string label) 
+	   (stream stream))
   (write-char #\< stream)
   (unless (noes namespace)
     (progn
@@ -109,19 +121,24 @@
 		href type)))))
 
 (defun xmlc (name some-string &key attr namespace stream)
-  "Return, as a string, a <name>...</name> component of a XML document. SOME-STRING, if a string, is included verbatim as the value of the node. If SOME-STRING is NIL, <name ... /> is returned. ATTR is an alist of strings where, for each member, the car is the string corresponding to the attribute name and the cadr is the attribute value. If STREAM is non-NIL, write string to stream STREAM. NAMESPACE is a string corresponding to the namespace."
+  "Return the string corresponding to an XML element with tag named NAME. SOME-STRING, if a string, is included verbatim as the content of the element. ATTR is an alist of strings where, for each member, the car is the string corresponding to the attribute name and the cadr is the attribute value. If STREAM is non-NIL, write string to stream STREAM. NAMESPACE is a string corresponding to the namespace."
   (declare (string name)
 	   (list attr))
   (let ((return-string
-	 (with-output-to-string (s) (xmlc* name some-string :attr attr :namespace namespace :stream s))))
+	 (with-output-to-string (s) 
+	   (xmlc* name some-string s
+		  :attr attr :namespace namespace))))
     (if stream (write-string return-string stream) return-string)))
 
-(defun xmlc* (name some-string &key attr namespace stream)
-  (declare (string name)
-	   (list attr))
+(defun xmlc* (name some-string stream &key attr namespace)
+  (declare (list attr)
+	   (stream stream)
+	   (string name))
+  "Return value undefined. Act on stream STREAM."
   (if some-string
       (progn
-	(start-tag* name :attributes attr :namespace namespace :stream stream)
+	(start-tag* name stream
+		    :attributes attr :namespace namespace)
 	(write-string some-string stream)
-	(end-tag* name :namespace namespace :stream stream))
-      (empty-tag* name :namespace namespace :attributes attr :stream stream)))
+	(end-tag* name stream :namespace namespace))
+      (empty-tag* name stream :namespace namespace :attributes attr)))
