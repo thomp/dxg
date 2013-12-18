@@ -142,3 +142,13 @@
 	(write-string some-string stream)
 	(end-tag* name stream :namespace namespace))
       (empty-tag* name stream :namespace namespace :attributes attr)))
+
+;; F is a funcallable object which accepts a single argument, an output stream
+(defun xmlc+ (name f stream &key attributes namespace)
+  (declare (list attributes) 
+	   (stream stream)
+	   (string name))
+  (start-tag* name stream :attributes attributes :namespace namespace)
+  (format t "~%10!~%")
+  (funcall f stream)
+  (end-tag* name stream :namespace namespace))
