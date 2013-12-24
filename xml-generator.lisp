@@ -29,6 +29,15 @@
 		 :attributes-string attributes-string))
    stream))
 
+;; F is a funcallable object which accepts a single argument, an output stream
+(defun elt+ (name f stream &key attributes namespace)
+  (declare (list attributes) 
+	   (stream stream)
+	   (string name))
+  (start-tag* name stream :attributes attributes :namespace namespace)
+  (funcall f stream)
+  (end-tag* name stream :namespace namespace))
+
 (defun empty-tag* (label stream &key namespace attributes (attributes-string ""))
   "Return value undefined. Act on stream STREAM."
   (declare (optimize (speed 3)) 
@@ -143,11 +152,3 @@
 	(end-tag* name stream :namespace namespace))
       (empty-tag* name stream :namespace namespace :attributes attr)))
 
-;; F is a funcallable object which accepts a single argument, an output stream
-(defun elt+ (name f stream &key attributes namespace)
-  (declare (list attributes) 
-	   (stream stream)
-	   (string name))
-  (start-tag* name stream :attributes attributes :namespace namespace)
-  (funcall f stream)
-  (end-tag* name stream :namespace namespace))
