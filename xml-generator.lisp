@@ -29,6 +29,21 @@
 		 :attributes-string attributes-string))
    stream))
 
+(defun el< (tag stream g &key attributes namespace)
+  "G is an output generator, either a string or a funcallable object where the corresponding function accepts a single argument, a stream."
+  (declare (stream stream)
+	   (string tag))
+  (cond ((not g)
+	 (dxg::empty-tag* 
+	  tag stream
+	  :attributes attributes))
+	((stringp g)
+	 (xmlc* tag g stream :attr attributes :namespace namespace))
+	(t
+	 (elt+ tag g stream
+	       :attributes attributes
+	       :namespace namespace))))
+
 ;; F is a funcallable object which accepts a single argument, an output stream
 (defun elt+ (name f stream &key attributes namespace)
   (declare (list attributes) 
@@ -106,8 +121,15 @@
 	(write-string verbatim-attributes stream))) 
   (write-char #\> stream))
 
-(defun prologue (&optional s)
-  (write-string "<?xml version=\"1.0\"?>" s))
+(defun prologue (s &key (encoding "UTF-8") (version "1.0"))
+  (write-string "<?xml version=\"" s)
+  (write-string version s)
+  (write-char #\" s)
+  (when encoding
+    (write-string " encoding=\"" s)
+    (write-string encoding s)
+    (write-char #\"))
+  (write-string "\"?>" s))
 
 (defun xml-spec (&key stylesheets stream)
   "Return a string corresponding to the top of a XML document. This includes the prologue (<?xml ...> statement and, possibly, a stylesheet specification <?xml-stylesheet ...>) and the DOCTYPE document type declaration. If STYLESHEETS is non-nil, then <?xml-stylesheet ...> declarations are specified with STYLESHEETS (see XML-STYLESHEET for format of STYLESHEETS). Note that it may not be desirable to specify stylesheets here; in a HTML document, the stylesheet can also be specified using the 'STYLE' tag in the HEAD component of the document."
@@ -140,10 +162,10 @@
     (if stream (write-string return-string stream) return-string)))
 
 (defun xmlc* (name some-string stream &key attr namespace)
+  "Return value undefined. Act on stream STREAM."
   (declare (list attr)
 	   (stream stream)
 	   (string name))
-  "Return value undefined. Act on stream STREAM."
   (if some-string
       (progn
 	(start-tag* name stream

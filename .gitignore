@@ -1,11 +1,4 @@
-/.gitignore~
+*~
 /DESIGN-PHILOSOPHY
-/DESIGN-PHILOSOPHY~
-/README~
-/dxg.asd~
-/named-entities.lisp~
-/packages.lisp~
+/examples.lisp
 /testing.lisp
-/testing.lisp~
-/util.lisp~
-/xml-generator.lisp~
